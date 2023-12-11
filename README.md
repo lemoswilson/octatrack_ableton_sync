@@ -12,7 +12,7 @@ This is where this script comes in. It’s inteded to allow you to write pattern
 With help from Ableton Drummer’s [MIDI NOTE TO BANK SUB PROGRAM](https://blog.abletondrummer.com/convert-midi-messages-in-ableton/), this script allows you to send Program Change messages on time from Session View Clips to Octatrack while keeping `Clip Launch Quantization` set to `1 bar`, so no more of that thing where Octatrack pattern chaining would be 1 bar behind your intention. 
 
 NOTE: Before trying out this script, you might want to attempt sending `MIDI CC #35 (Stop/Start)` messages together with Program Changes messages. This could possibly allow you to instantly change patterns on the OT  without the need to worry about quantization issues, as long as you send the messages exactly at the moment you want it to change. For me, this setup did not work, hence the creation of this script. 
-I do have the intention of writing a more generic version of this script that would allow a broader use case, but for now this is enough for my needs. PRs for generalizing the behavior for different `Clip Launch Quantization` and `Chain After` settings are welcome. 
+I do have the intention of writing a more generic version of this script that would allow a broader use case, but for now this is enough for my needs. PRs for generalizing the behavior for different Ableton/OT settings are welcome.
 
 ## Installation
 Clone/download the folder and add it to Ableton’s MIDI Remote Script path
