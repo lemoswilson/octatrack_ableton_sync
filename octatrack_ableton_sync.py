@@ -7,7 +7,7 @@ PCA_KEY = "OT PCA"
 IPCS_KEY = "OT IPCS"
 QUANTIZATION_SETTING = 5 # 1 Bar
 
-class css_init_test(ControlSurface):
+class octatrack_ableton_sync(ControlSurface):
 	def __init__(self, c_instance):
 		super(css_init_test, self).__init__(c_instance)
 

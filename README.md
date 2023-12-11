@@ -1,15 +1,18 @@
 # (WIP DO NOT USE IT)
 
 # Octatrack Ableton Sync
-Little workaround for the inability to set Octratrack’s `Chain After` setting to something like `Immediate` , that would allow it to behave the same way as `Direct Start` works on Analog Four. 
+Little workaround for the inability to set Octratrack’s `Chain After` setting to something like `Immediate`, that would allow it to behave the same way as `Direct Start` works on Analog Four. This scripted is intended to work on a very limited and specific set of configurations, I do not guarantee that this will work if you don't follow exactly what's been laid in this README file. Also, use this script at your own's risk.
 
+
+# Motivation
 The quickest response for changing patterns on Octatrack is `2/16` , which is definetely fine if you are performing and OT is the clock/master device on your setup. Things start to get a bit complicated if you want the OT to be a slave device, and you want to change patterns from devices other than the OT.  
 
-This is where this script comes in. It’s inteded to allow you to write pattern changes to the OT from Ableton’s clips on session view in a consistent and easy way. Albeit limited to work only on 4/4 time signature, and when Ableton’s global quantization setting is set to 1 bar, and Octatrack patterns are an integer number of bars long on a 4/4 time signature, it is enough for me to be able to write dance music without having to worry about syncing issues between both machines. 
+This is where this script comes in. It’s inteded to allow you to write pattern changes to the OT from Ableton’s clips on Session view in a consistent and easy way. Albeit limited to work only on `4/4` time signature, and when Ableton’s `Clip Launch Quantization` setting is set to 1 bar, and Octatrack patterns are an integer number of bars long on a `4/4` time signature, it is enough for me to be able to write straightforward dance music without having to worry about syncing issues between both machines. 
 
-With help from Ableton Drummer’s [MIDI NOTE TO BANK SUB PROGRAM](https://blog.abletondrummer.com/convert-midi-messages-in-ableton/), this script allows you to send Program Change messages on time from Session View Clips to Octatrack while keeping Clip Launch Quantization set to 1 bar, so no more of that thing where Octatrack pattern chaining would be 1 bar behind your intention. 
+With help from Ableton Drummer’s [MIDI NOTE TO BANK SUB PROGRAM](https://blog.abletondrummer.com/convert-midi-messages-in-ableton/), this script allows you to send Program Change messages on time from Session View Clips to Octatrack while keeping `Clip Launch Quantization` set to `1 bar`, so no more of that thing where Octatrack pattern chaining would be 1 bar behind your intention. 
 
-NOTE: Before trying out this script, you might want to attempt to send MIDI CC #35 (Stop/Start) messages together with Program Changes messages. This could possibly allow you to instantly change patters on OT, without the need to worry about quantization issues, as long as you send the messages exactly at the moment you want it to change. For me, this setup did not work, hence the creation of this script. 
+NOTE: Before trying out this script, you might want to attempt sending `MIDI CC #35 (Stop/Start)` messages together with Program Changes messages. This could possibly allow you to instantly change patterns on the OT  without the need to worry about quantization issues, as long as you send the messages exactly at the moment you want it to change. For me, this setup did not work, hence the creation of this script. 
+I do have the intention of writing a more generic version of this script that would allow a broader use case, but for now this is enough for my needs. PRs for generalizing the behavior for different `Clip Launch Quantization` and `Chain After` settings are welcome. 
 
 ## Installation
 Clone/download the folder and add it to Ableton’s MIDI Remote Script path
@@ -27,8 +30,6 @@ In order for this script to properly work, you need to have three MIDI tracks se
 
 PCC Clip’s Start Marker and Loop Start should always be the same, and End Marker and Loop End should always be the same. If you want to increase the size of a loop, never do that by changing start points, but always the end.
 
-You should triggered 
-
 ## Octatrack Setup
 `Chain After` should be set to `Pat Length`.
 
@@ -38,8 +39,7 @@ You should triggered
 - Immediate Program Change Sender (IPCS): The track that will send program changes to the OT when *triggering* clips on the PCC.
 
 ## Usage:
-- If you want the OT to change to pattern A01 on the first beat of the clip you should place a C-2 note in the first beat. This track should be always deactivated, as it won’t send messages to the OT directly, it is used only to write the messages you want to send.
 - Add the M4L device MIDI Notes to Program Change on the `OT PCC`, `OT PCA`, and `OT IPCS` tracks and set up it the way you like. Write MIDI Notes on Session View Clips on the PCC track, and **trigger them within the last bar before you want the pattern to change**.
 
 ### Notes
-All clips on the PCC must have a note in the very beggining. Also, for this to work it requires that the notes in the PCC clips firing align correctly with the end of the playing pattern on OT. For example, if you add a note that will trigger a 4 bar pattern, the next note you add to the PCC clip should be after 4, 8, 12, 16, … `4n bars` where `n` is an integer.
+All clips on the PCC must have a note in the very beggining. Also, for this to work it requires that the notes in the PCC clips firing align correctly with the end of the playing pattern on OT. For example, if you add a note that will trigger a 4 bar pattern, the next note you add to the PCC clip should be after `4n bars` where `n` is an integer.
