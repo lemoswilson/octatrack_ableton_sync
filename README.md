@@ -1,5 +1,3 @@
-# (WIP DO NOT USE IT)
-
 # Octatrack Ableton Sync
 Little workaround for the inability to set Octratrack’s `Chain After` setting to something like `Immediate`, that would allow it to behave the same way as `Direct Start` works on Analog Four. This scripted is intended to work on a very limited and specific set of configurations, I do not guarantee that this will work if you don't follow exactly what's been laid in this README file. Also, use this script at your own's risk.
 
