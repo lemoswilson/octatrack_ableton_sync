@@ -29,7 +29,7 @@ class octatrack_ableton_sync(ControlSurface):
 			# Setup listeners
 			self.song().add_tracks_listener(self.find_indexes)
 			self.add_clip_slots_listeners()
-			# self.add_scenes_listener(self.scenes_listener_handler)
+			self.song().add_scenes_listener(self.scenes_listener_handler)
 
 	def defer(self, *tasks):
 		tasks = [Task.delay(1)] + list(map(lambda x: Task.run(x), tasks))
@@ -61,16 +61,19 @@ class octatrack_ableton_sync(ControlSurface):
 	def find_ipcs_index(self):
 		return self.find_index_of(self.ipcs_key)
 
-	# # Remoev and add clip_slots listeners 
-	# def scenes_listener_handler(self):
-	# 	self.remove_clip_slots_listeners()
-	# 	self.add_clip_slots_listeners()
+	# Remoev and add clip_slots listeners 
+	def scenes_listener_handler(self):
+		self.remove_clip_slots_listeners()
+		self.add_clip_slots_listeners()
 
-	# # Remove the PCC clip slot listeners
-	# def remove_clip_slots_listeners(self):
-	# 	for clip_slot in self.song().tracks[self.pcc_index].clip_slots:
-	# 		clip_slot.remove_has_clip_listener(self.has_clip_handler(clip_slot))
-	# 		clip_slot.remove_is_triggered_listener(self.is_triggered_listener_handler(clip_slot))
+	# Remove the PCC clip slot listeners
+	def remove_clip_slots_listeners(self):
+		for clip_slot in self.song().tracks[self.pcc_index].clip_slots:
+			if clip_slot.has_clip_has_listener(self.has_clip_handler(clip_slot)):
+				clip_slot.remove_has_clip_listener(self.has_clip_handler(clip_slot))
+
+			if clip_slot.is_triggered_has_listener(self.is_triggered_listener_handler(clip_slot)):
+				clip_slot.remove_is_triggered_listener(self.is_triggered_listener_handler(clip_slot))
 
 	# Set the PCC clip slot listeners
 	def add_clip_slots_listeners(self):
@@ -82,25 +85,44 @@ class octatrack_ableton_sync(ControlSurface):
 	# both PCA and IPCS should be triggered/fired as well
 	def is_triggered_listener_handler(self, clip_slot):
 		def inner():
-			self.log("Running is_triggered_listener handler")
-			self.log(f"is_triggered? {clip_slot.is_triggered}")
-			# # Don't do anything if the clip is not triggered, or there's no trigger
-			# if not clip_slot.is_triggered: return
-			# if not clip_slot.has_clip: return
+			if clip_slot.has_clip: clip_index = self.get_clip_index(clip_slot.clip, self.pcc_index)
+			else: clip_index = self.find_triggered_index()
 
-			# clip_index = self.get_clip_index(clip_slot.clip, self.pcc_index)
+			if clip_index is None: return
 
-			# song = song()
-			# pca_clip = song.tracks[self.pca_index].clip_slots[clip_index]
-			# ipcs_clip = song.tracks[self.ipcs_index].clip_slots[clip_index]
+			pca_clip_slot = self.song().tracks[self.pca_index].clip_slots[clip_index]
+			ipcs_clip_slot = self.song().tracks[self.ipcs_index].clip_slots[clip_index]
 
-			# if not pca_clip.is_triggered and not pca_clip.is_playing:
-			# 	pca_clip.fire()
+			# If the clip is not triggered, and not playing make sure PCA and IPCS is not triggered either
+			if (not clip_slot.is_triggered and clip_slot.has_clip and not clip_slot.clip.is_playing):
 
-			# if not ipcs_clip.is_triggered and not ipcs_clip.is_playing: 
-			# 	pca_clip.fire()
+				# If pca clip is either triggered or playing, stop it
+				if pca_clip_slot.is_triggered or (pca_clip_slot.has_clip and pca_clip_slot.clip.is_playing): 
+					pca_clip_slot.stop()
+
+				# If ipcs clip is either triggered or playing, stop it
+				if ipcs_clip_slot.is_triggered or (ipcs_clip_slot.has_clip and ipcs_clip_slot.clip.is_playing): 
+					ipcs_clip_slot.stop()
+
+			# If clip is triggered
+			elif clip_slot.is_triggered:
+				# and pca clip slot is not triggered, fire it
+				if not pca_clip_slot.is_triggered: pca_clip_slot.fire()
+				# and there's no clip, and ipcs clip slot is not triggered, fire it (will stop it)
+				if not clip_slot.has_clip and not ipcs_clip_slot.is_triggered: ipcs_clip_slot.fire()
+				# or there's a clip, and ipcs clip is not playing, fire it
+				elif clip_slot.has_clip and not ipcs_clip_slot.clip.is_playing : ipcs_clip_slot.fire()
+					
+
+			elif not clip_slot.has_clip: return
 
 		return inner
+
+	# WHen there's no clip, there's no easy way to find the triggered scene index, so we have to loop over
+	# all the slots and find the one that's triggered
+	def find_triggered_index(self):
+		for index, clip_slot in enumerate(self.song().tracks[self.pcc_index].clip_slots):
+			if clip_slot.is_triggered: return index
 		
 
 	# Handle the has_clip listener on PCC slots, if a new clip has been added make sure
@@ -307,10 +329,11 @@ class octatrack_ableton_sync(ControlSurface):
 		pcc_clip = self.get_pcc_clip(index)
 
 		def create_clip():
-			clip_slot.create_clip(pcc_clip.length)
-			clip_slot.clip.looping = pcc_clip.looping
-			clip_slot.clip.launch_quantization = self.quantization
-			clip_slot.clip.add_new_notes(self.make_pca_clip_notes_from_pcc_clip(pcc_clip))
+			if not clip_slot.has_clip:
+				clip_slot.create_clip(pcc_clip.length)
+				clip_slot.clip.looping = pcc_clip.looping
+				clip_slot.clip.launch_quantization = self.quantization
+				clip_slot.clip.add_new_notes(self.make_pca_clip_notes_from_pcc_clip(pcc_clip))
 
 		self.defer(create_clip)
 
@@ -340,9 +363,10 @@ class octatrack_ableton_sync(ControlSurface):
 		pcc_clip = self.get_pcc_clip(index)
 
 		def create_clip():
-			clip_slot.create_clip(pcc_clip.length)
-			clip_slot.clip.looping = False
-			clip_slot.clip.launch_quantization = 1 #
-			clip_slot.clip.add_new_notes(self.make_ipcs_clip_notes_from_pcc_clip(pcc_clip))
+			if not clip_slot.has_clip:
+				clip_slot.create_clip(pcc_clip.length)
+				clip_slot.clip.looping = False
+				clip_slot.clip.launch_quantization = 1 #
+				clip_slot.clip.add_new_notes(self.make_ipcs_clip_notes_from_pcc_clip(pcc_clip))
 
 		self.defer(create_clip)
