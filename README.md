@@ -41,3 +41,5 @@ PCC Clip’s Start Marker and Loop Start should always be the same, and End Mark
 
 ### Notes
 All clips on the PCC must have a note in the very beggining. Also, for this to work it requires that the notes in the PCC clips firing align correctly with the end of the playing pattern on OT. For example, if you add a note that will trigger a 4 bar pattern, the next note you add to the PCC clip should be after `4n bars` where `n` is an integer.
+You should not start playback by triggering a PCC clip, as this script requires PCC clips to be triggered before playing. 
+For the same reason as last note, it's advisable to start playback with an empty 1 bar scene, and trigger the desired initial scene within this bar. 
