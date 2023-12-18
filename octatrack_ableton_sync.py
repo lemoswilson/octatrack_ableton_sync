@@ -43,10 +43,6 @@ class octatrack_ableton_sync(ControlSurface):
 		self.pcc_index = self.find_pcc_index()
 		self.pca_index = self.find_pca_index()
 		self.ipcs_index = self.find_ipcs_index()
-		self.log(f"Change to the tracks")
-		self.log(f"PCC Index {self.pcc_index}" )
-		self.log(f"PCA Index {self.pca_index}" )
-		self.log(f"IPCS Index {self.ipcs_index}")
 
 	# Find the index of a track given its name
 	def find_index_of(self, track_name):
@@ -78,7 +74,6 @@ class octatrack_ableton_sync(ControlSurface):
 
 	# Set the PCC clip slot listeners
 	def add_clip_slots_listeners(self):
-		self.log("Setting the clip slots listeners")
 		for clip_slot in self.song().tracks[self.pcc_index].clip_slots:
 			clip_slot.add_has_clip_listener(self.has_clip_handler(clip_slot))
 			clip_slot.add_is_triggered_listener(self.is_triggered_listener_handler(clip_slot))
@@ -127,59 +122,85 @@ class octatrack_ableton_sync(ControlSurface):
 				self.reset_ipcs_clip_by_index(clip_index)
 
 				self.reset_notes_listener(clip_slot.clip)
-				# self.reset_loop_listeners(clip_slot.clip)
+
+				#TODO: PAREI AQUI
+
+				self.reset_loop_listeners(clip_slot.clip)
 
 			else: self.match_empty_clip_slots()
 
 		return inner
 
-	# # Reset the looping listeners
-	# def reset_loop_listeners(self, clip):
-	# 	self.reset_loop_end_listener(clip)
-	# 	self.reset_end_marker_listener(clip)
-	# 	self.reset_looping_listener(clip)
+	# Reset the looping listeners
+	def reset_loop_listeners(self, clip):
+		self.reset_loop_end_listener(clip)
+		self.reset_end_marker_listener(clip)
+		self.reset_looping_listener(clip)
 
-	# # Reset the loop_end_listener
-	# def reset_loop_end_listener(self, clip):
-	# 	clip.remove_loop_end_listener(self.loop_end_listener_handler(clip))
-	# 	clip.add_loop_end_listener(self.loop_end_listener_handler(clip))
+	# Reset the loop_end_listener
+	def reset_loop_end_listener(self, clip):
+		if clip.loop_end_has_listener(self.loop_end_listener_handler(clip)):
+			clip.remove_loop_end_listener(self.loop_end_listener_handler(clip))
 
-	# # Make sure loop_end of PCA and IPCS match PCC's
-	# def loop_end_listener_handler(self, clip):
-	# 	song = song()
-	# 	clip_index = self.get_clip_index(clip, self.pcc_index)
-	# 	pca_clip = song.tracks[self.pca_index].clip_slots[clip_index]
-	# 	ipcs_clip = song.tracks[self.ipcs_index].clip_slots[clip_index]
+		clip.add_loop_end_listener(self.loop_end_listener_handler(clip))
 
-	# 	pca_clip.loop_end = clip.loop_end
-	# 	ipcs_clip.loop_end = clip.loop_end
 
-	# # Reset the end_marker_listener
-	# def reset_end_marker_listener(self, clip):
-	# 	clip.remove_end_marker_listener(self.end_marker_listener_handler(clip))
-	# 	clip.add_loop_end_listener(self.end_marker_listener_handler(clip))
+	# Make sure loop_end of PCA and IPCS match PCC's
+	def loop_end_listener_handler(self, clip):
+		def inner():
+			clip_index = self.get_clip_index(clip, self.pcc_index)
+			pca_clip = self.song().tracks[self.pca_index].clip_slots[clip_index].clip
+			ipcs_clip = self.song().tracks[self.ipcs_index].clip_slots[clip_index].clip
 
-	# # Make sure end marker of PCA and IPCS match PCC's
-	# def end_marker_listener_handler(self, clip)
-	# 	song = song()
-	# 	clip_index = self.get_clip_index(clip, self.pcc_index)
-	# 	pca_clip = song.tracks[self.pca_index].clip_slots[clip_index]
-	# 	ipcs_clip = song.tracks[self.ipcs_index].clip_slots[clip_index]
+			def deferable():
+				pca_clip.loop_end = clip.loop_end
+				ipcs_clip.loop_end = clip.loop_end
 
-	# 	pca_clip.end_marker = clip.end_marker
-	# 	ipcs_clip.end_marker = clip.end_marker
+			self.defer(deferable)
 
-	# # Reset the is_looping_listener
-	# def reset_looping_listener(self, clip):
-	# 	clip.remove_is_looping_listener(self.is_looping_listener_handler(clip))
-	# 	clip.add_is_looping_listener(self.is_looping_listener_handler(clip))
+		return inner
 
-	# # Make sure the PCA is_looping matches PCC's
-	# def is_looping_listener_handler(self, clip):
-	# 	clip_index = self.get_clip_index(clip, self.pcc_index)
-	# 	pca_clip = song().tracks[self.pca_index].clip_slots[clip_index]
+	# Reset the end_marker_listener
+	def reset_end_marker_listener(self, clip):
+		if clip.end_marker_has_listener(self.end_marker_listener_handler(clip)):
+			clip.remove_end_marker_listener(self.end_marker_listener_handler(clip))
 
-	# 	pca_clip.is_looping = clip.is_looping
+		clip.add_end_marker_listener(self.end_marker_listener_handler(clip))
+
+	# Make sure end marker of PCA and IPCS match PCC's
+	def end_marker_listener_handler(self, clip):
+		def inner():
+			clip_index = self.get_clip_index(clip, self.pcc_index)
+			pca_clip = self.song().tracks[self.pca_index].clip_slots[clip_index].clip
+			ipcs_clip = self.song().tracks[self.ipcs_index].clip_slots[clip_index].clip
+
+			def deferable():
+				pca_clip.end_marker = clip.end_marker
+				ipcs_clip.end_marker = clip.end_marker
+
+			self.defer(deferable)
+
+		return inner
+
+	# Reset the is_looping_listener
+	def reset_looping_listener(self, clip):
+		if clip.looping_has_listener(self.is_looping_listener_handler(clip)):
+			clip.remove_looping_listener(self.is_looping_listener_handler(clip))
+
+		clip.add_looping_listener(self.is_looping_listener_handler(clip))
+
+	# Make sure the PCA is_looping matches PCC's
+	def is_looping_listener_handler(self, clip):
+		def inner():
+			clip_index = self.get_clip_index(clip, self.pcc_index)
+			pca_clip = self.song().tracks[self.pca_index].clip_slots[clip_index].clip
+
+			def deferable():
+				pca_clip.looping = clip.looping
+
+			self.defer(deferable)
+
+		return inner
 
 	# Reset the notes listener
 	def reset_notes_listener(self, clip):
@@ -195,7 +216,6 @@ class octatrack_ableton_sync(ControlSurface):
 	# are on par with what they should be
 	def notes_listener_handler(self, clip):
 		def inner(): 
-			self.log('running notes listener handler')
 			# get the PCC clip index
 			clip_index = self.get_clip_index(clip, self.pcc_index)
 
@@ -211,7 +231,7 @@ class octatrack_ableton_sync(ControlSurface):
 			def reset_notes():
 				# If PCA already has clip, remove the notes and add again
 				if pca_clip_slot.has_clip:
-					pca_clip_slot.clip.remove_notes_extended(0, 127, 0, 99999)
+					pca_clip_slot.clip.remove_notes_extended(0, 127, -99999, 99999)
 					pca_clip_slot.clip.add_new_notes(pca_notes)
 
 				# If it doesn't create a new clip, and set the clip notes
@@ -223,7 +243,7 @@ class octatrack_ableton_sync(ControlSurface):
 
 				# If IPCS already has clip, remove the notes and add again
 				if ipcs_clip_slot.has_clip:
-					ipcs_clip_slot.clip.remove_notes_extended(0, 127, 0, 99999)
+					ipcs_clip_slot.clip.remove_notes_extended(0, 127, -99999, 99999)
 					ipcs_clip_slot.clip.add_new_notes(ipcs_notes)
 
 				# If it doesn't create a new clip, and set the clip notes
@@ -240,16 +260,13 @@ class octatrack_ableton_sync(ControlSurface):
 	# Make sure every IPCS and PCA clip slots are empty, if the corresponding clip slot
 	# in the PCC track is empty
 	def match_empty_clip_slots(self):
-		self.log('running match empty clip slots')
 		for index, clip_slot in enumerate(self.song().tracks[self.pcc_index].clip_slots):
 			if not clip_slot.has_clip: self.clear_pca_ipcs_clip_slot(index)
 
 	# Delete clip from PCA and IPCS slot given a clip index
 	def clear_pca_ipcs_clip_slot(self, index):
-		self.log("deleting pca")
 		try: self.defer(self.song().tracks[self.pca_index].clip_slots[index].delete_clip)
 		except: pass
-		self.log("deleting ipcs")
 		try: self.defer(self.song().tracks[self.ipcs_index].clip_slots[index].delete_clip)
 		except: pass
 
@@ -283,7 +300,6 @@ class octatrack_ableton_sync(ControlSurface):
 
 	# Reset the PCA clip of an index, Requires the pcc clip slot of the same index to have a clip
 	def reset_pca_clip_by_index(self, index): 
-		self.log(f"Reseting PCA clip of index {index}")
 		clip_slot = self.song().tracks[self.pca_index].clip_slots[index]
 
 		if clip_slot.has_clip: clip_slot.delete_clip()
