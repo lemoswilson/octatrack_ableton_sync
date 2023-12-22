@@ -111,7 +111,7 @@ class octatrack_ableton_sync(ControlSurface):
 				# and there's no clip, and ipcs clip slot is not triggered, fire it (will stop it)
 				if not clip_slot.has_clip and not ipcs_clip_slot.is_triggered: ipcs_clip_slot.fire()
 				# or there's a clip, and ipcs clip is not playing, fire it
-				elif clip_slot.has_clip and not ipcs_clip_slot.clip.is_playing : ipcs_clip_slot.fire()
+				elif clip_slot.has_clip and ipcs_clip_slot.has_clip and not ipcs_clip_slot.clip.is_playing : ipcs_clip_slot.fire()
 					
 
 			elif not clip_slot.has_clip: return
@@ -324,7 +324,7 @@ class octatrack_ableton_sync(ControlSurface):
 	def reset_pca_clip_by_index(self, index): 
 		clip_slot = self.song().tracks[self.pca_index].clip_slots[index]
 
-		if clip_slot.has_clip: clip_slot.delete_clip()
+		if clip_slot.has_clip: self.defer(clip_slot.delete_clip)
 
 		pcc_clip = self.get_pcc_clip(index)
 
